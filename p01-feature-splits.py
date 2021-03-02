@@ -16,6 +16,9 @@ class DataPoint:
     temperature: float
     frozen: bool
 
+    def get_temp(self) -> float:
+        return self.temperature
+
 
 data = [
     # vermont temperatures; frozen=True
@@ -47,8 +50,16 @@ for d in data:
 
 
 def find_candidate_splits(data: List[DataPoint]) -> List[float]:
+    data.sort(key=lambda pt: pt.get_temp())
+
     midpoints = []
-    TODO("loop through data and generate candidate split locations")
+    for i in range(len(data)-1):
+        l = data[i].temperature
+        r = data[i+1].temperature
+
+        mid = (l + r) / 2 #calculate the midpoint
+        midpoints.append(mid)
+
     return midpoints
 
 
@@ -68,8 +79,13 @@ def gini_impurity(points: List[DataPoint]) -> float:
 def impurity_of_split(points: List[DataPoint], split: float) -> float:
     smaller = []
     bigger = []
-
-    TODO("split points into smaller and bigger lists based on split!")
+    for p in points: # loop over all my points
+        if p.temperature > split:
+            bigger.append(p)
+        else:
+            smaller.append(p)
+    # get used to putting assert statements everywhere
+    assert( (len(smaller)+len(bigger)) == len(points))
 
     return gini_impurity(smaller) + gini_impurity(bigger)
 
