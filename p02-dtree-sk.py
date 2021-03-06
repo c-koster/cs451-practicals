@@ -86,17 +86,47 @@ f = DecisionTreeClassifier(
 f.fit(train_X, train_y)
 
 # did it memorize OK?
-print("Score on Training: {:.3f}".format(f.score(train_X, train_y)))
-print("Score on Testing: {:.3f}".format(f.score(test_X, test_y)))
+print("Default - Score on Training: {:.3f}".format(f.score(train_X, train_y)))
+print("Default - Score on Testing: {:.3f}".format(f.score(test_X, test_y)))
 
 ## Actual 'practical' assignment.
-TODO(
-    "1. Figure out what all of the parameters I listed for the DecisionTreeClassifier do."
-)
+
+# 1. Figure out what all of the parameters I listed for the DecisionTreeClassifier do.
+
+# splitter - indicates how we are splitting this node into left an right.
+# should we choose the 'best' split at this node or a 'random' one?
+
+# max_features - the number of features we consider when looking for the best split.
+# at max_features=None, it just uses all the features
+
+# criterion - what is our definition of best? we can use either gini impurity
+#  or entropy to evaluate our splits.
+
+# max_depth - how big can our tree get?
+
+# random_state - a predetermined idea of random
+
 # Consult the documentation: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
-TODO("2. Pick one parameter, vary it, and find some version of the 'best' setting.")
+# 2. Pick one parameter, vary it, and find some version of the 'best' setting.
 # Default performance:
 # There are 2079 training examples and 693 testing examples.
 # Score on Training: 1.000
 # Score on Testing: 0.889
-TODO("3. Leave clear code for running your experiment!")
+
+# 'entropy' performance:
+# Score on Training: 1.000
+# Score on Testing: 0.903
+# so this is a little bit better
+g = DecisionTreeClassifier(
+    splitter="best",
+    max_features=None,
+    criterion="entropy",
+    max_depth=None,
+    random_state=13,
+)  # type:ignore
+
+g.fit(train_X, train_y)
+
+# did it memorize OK?
+print("Entropy - Score on Training: {:.3f}".format(g.score(train_X, train_y)))
+print("Entropy - Score on Testing: {:.3f}".format(g.score(test_X, test_y)))
