@@ -33,7 +33,9 @@ with open(dataset_local_path("poetry_id.jsonl")) as fp:
 ## CONVERT TO MATRIX:
 
 feature_numbering = DictVectorizer(sort=True)
-X = feature_numbering.fit_transform(examples)
+X = feature_numbering.fit_transform(examples)/1e4
+# make my features less than one !!
+
 
 print("Features as {} matrix.".format(X.shape))
 
@@ -63,12 +65,12 @@ class ExperimentResult:
     model: ClassifierMixin
 
 
-def consider_decision_trees():
+def consider_decision_trees() -> ExperimentResult:
     print("Consider Decision Tree.")
     performances: List[ExperimentResult] = []
 
     for rnd in range(3):
-        for crit in ["entropy"]:
+        for crit in ["gini", "entropy"]:
             for d in range(1, 9):
                 params = {
                     "criterion": crit,
@@ -83,7 +85,7 @@ def consider_decision_trees():
     return max(performances, key=lambda result: result.vali_acc)
 
 
-def consider_random_forest():
+def consider_random_forest() -> ExperimentResult:
     print("Consider Random Forest.")
     performances: List[ExperimentResult] = []
     # Random Forest
@@ -110,7 +112,7 @@ def consider_perceptron() -> ExperimentResult:
         params = {
             "random_state": rnd,
             "penalty": None,
-            "max_iter": 1000,
+            "max_iter": 1e4,
         }
         f = Perceptron(**params)
         f.fit(X_train, y_train)
@@ -122,20 +124,23 @@ def consider_perceptron() -> ExperimentResult:
 
 
 def consider_logistic_regression() -> ExperimentResult:
+
+
     print("Consider Logistic Regression.")
     performances: List[ExperimentResult] = []
     for rnd in range(3):
-        params = {
-            "random_state": rnd,
-            "penalty": "l2",
-            "max_iter": 100,
-            "C": 1.0,
-        }
-        f = LogisticRegression(**params)
-        f.fit(X_train, y_train)
-        vali_acc = f.score(X_vali, y_vali)
-        result = ExperimentResult(vali_acc, params, f)
-        performances.append(result)
+        for p in ["l2"]: # values for penalty type
+            params = {
+                "random_state": rnd,
+                "penalty": p,
+                "max_iter": 1e4, # give LR more time to converge
+                "C": 1.0,
+            }
+            f = LogisticRegression(**params)
+            f.fit(X_train, y_train)
+            vali_acc = f.score(X_vali, y_vali)
+            result = ExperimentResult(vali_acc, params, f)
+            performances.append(result)
 
     return max(performances, key=lambda result: result.vali_acc)
 
@@ -144,18 +149,22 @@ def consider_neural_net() -> ExperimentResult:
     print("Consider Multi-Layer Perceptron.")
     performances: List[ExperimentResult] = []
     for rnd in range(3):
-        params = {
-            "hidden_layer_sizes": (32,),
-            "random_state": rnd,
-            "solver": "lbfgs",
-            "max_iter": 500,
-            "alpha": 0.0001,
-        }
-        f = MLPClassifier(**params)
-        f.fit(X_train, y_train)
-        vali_acc = f.score(X_vali, y_vali)
-        result = ExperimentResult(vali_acc, params, f)
-        performances.append(result)
+        for layer in [(32,), (16,16,), (16,16,16, )]:
+            print("Trying a new set of Parameters")
+            for activation in ['logistic','relu']:
+                params = {
+                    "hidden_layer_sizes": layer,
+                    "random_state": rnd,
+                    "activation":activation,
+                    "solver": "lbfgs",
+                    "max_iter": 1e4,
+                    "alpha": 0.0001,
+                }
+                f = MLPClassifier(**params)
+                f.fit(X_train, y_train)
+                vali_acc = f.score(X_vali, y_vali)
+                result = ExperimentResult(vali_acc, params, f)
+                performances.append(result)
 
     return max(performances, key=lambda result: result.vali_acc)
 
@@ -189,8 +198,23 @@ simple_boxplot(
     save="model-cmp.png",
 )
 
-TODO("1. Understand consider_decision_trees; I have 'tuned' it.")
-TODO("2. Find appropriate max_iter settings to stop warning messages.")
-TODO(
-    "3. Pick a model: {perceptron, logistic regression, neural_network} and optimize it!"
-)
+
+#TODO("1. Understand consider_decision_trees; I have 'tuned' it.")
+# in consider_decision_trees, you've iterated over all possible combinations of random seed,
+# criterion of 'best', and max_depth, and then picked out the best one.
+
+# TODO("2. Find appropriate max_iter settings to stop warning messages.")
+# we can fix the abnormal iteration problem by scaling down our variables, or increasing the
+# number of iterations to reach convergence
+
+# TODO("3. Pick a model: {perceptron, logistic regression, neural_network} and optimize it!")
+# I choose logistic regression --
+# I'll loop over parameters
+# alpha: float, [0.0001, 0.0005]
+# penalty: 'l1', 'l2', 'elasticnet'
+# -- actually scratch that -- we can't really change anything interesting...
+
+# instead i'll try the neural network with the following parameter modifications:
+# hidden layer size: [(32,) , (16,16,) , (16,16,16, )]
+# activation: ['identity','logistic','relu']
+# woof this takes really long ...
