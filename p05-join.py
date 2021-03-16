@@ -146,14 +146,22 @@ from sklearn.metrics import roc_auc_score
 from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
 
-
 models: Dict[str, Any] = {
+    # look at me doing this for-loop trickery
     "SGDClassifier": SGDClassifier(),
     "Perceptron": Perceptron(),
     "LogisticRegression": LogisticRegression(),
     "MLPClassifier": MLPClassifier(solver="lbfgs",hidden_layer_sizes=(64,2,)),
-    "RandomForest": RandomForestClassifier()
+    "RandomForest": RandomForestClassifier(),
 }
+
+# likely not random -- 5 random states show pretty similar results here
+
+for r_state in range(5):
+    models["DtreeClassifier-{}".format(r_state)] =  DecisionTreeClassifier(random_state=r_state)
+
+
+
 
 # depth doesn't do anything
 """
@@ -213,4 +221,5 @@ simple_boxplot(boxplot_datas,title="Validation Accuracy",xlabel="Model",ylabel="
 
 # the linear model and the random forest classifier look pretty identical
 
-TODO("2.D. Is it randomness? Control for random_state parameters!")
+# TODO("2.D. Is it randomness? Control for random_state parameters!")
+# likely not -- see 158-162. I tried for a few different models in place of the DTree
