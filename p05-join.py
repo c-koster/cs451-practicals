@@ -9,7 +9,7 @@ You can contribute to science or get a sense of the data here: https://label.jjf
 import gzip, json
 from shared import dataset_local_path, TODO
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Any
 
 
 """
@@ -62,7 +62,28 @@ print(pages[0])
 print(labels[0])
 
 joined_data: Dict[str, JoinedWikiData] = {}
+# we want our joined data filled out with JustWikiPages and JustWikiLabels together
 
+# so create a hash map with all the label ids
+labels_by_id: Dict[str, JustWikiLabel] = {}
+for l in labels:
+    labels_by_id[l.wiki_id] = l
+
+
+# then loop over the pages
+for p in pages:
+    # check if we have missing labels in our page
+    if p.wiki_id not in labels_by_id:
+        print("yo it's missing")
+        continue # if so, skip this page
+
+    label_for_page = labels_by_id[p.wiki_id]
+    # create a joined row -- this needs te id, the label, the title, and the body
+    joined_row = JoinedWikiData(p.wiki_id,label_for_page.is_literary, p.title, p.body)
+    joined_data[joined_row.wiki_id] = joined_row # add it. the key is the wiki_id
+
+
+print(labels_by_id)
 
 # TODO("1. create a list of JoinedWikiData from the ``pages`` and ``labels`` lists.")
 # This challenge has some very short solutions, so it's more conceptual. If you're stuck after ~10-20 minutes of thinking, ask!
@@ -118,16 +139,27 @@ X_test = word_to_column.transform(ex_test)
 
 
 print("Ready to Learn!")
+# import everyone
 from sklearn.linear_model import LogisticRegression, SGDClassifier, Perceptron
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import roc_auc_score
+from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import RandomForestClassifier
 
-models = {
+
+models: Dict[str, Any] = {
     "SGDClassifier": SGDClassifier(),
     "Perceptron": Perceptron(),
     "LogisticRegression": LogisticRegression(),
-    "DTree": DecisionTreeClassifier(),
+    "MLPClassifier": MLPClassifier(solver="lbfgs",hidden_layer_sizes=(64,2,)),
+    "RandomForest": RandomForestClassifier()
 }
+
+# depth doesn't do anything
+"""
+for i in range(1,20):
+    models["DTree-{}".format(i)] = DecisionTreeClassifier(max_depth=i)
+"""
 
 for name, m in models.items():
     m.fit(X_train, y_train)
@@ -155,10 +187,30 @@ DTree:
         Vali-Acc: 0.739
         Vali-AUC: 0.71
 """
-TODO("2. Explore why DecisionTrees are not beating linear models. Answer one of:")
-TODO("2.A. Is it a bad depth?")
-TODO("2.B. Do Random Forests do better?")
-TODO(
-    "2.C. Is it randomness? Use simple_boxplot and bootstrap_auc/bootstrap_acc to see if the differences are meaningful!"
-)
+# TODO("2. Explore why DecisionTrees are not beating linear models. Answer one of:")
+# TODO("2.A. Is it a bad depth?")
+# nope, depth doesn't do anything !
+
+# TODO("2.B. Do Random Forests do better?")
+# yes they do. here's what it tells me
+"""
+RandomForest:
+	Vali-Acc: 0.825
+	Vali-AUC: 0.874
+"""
+
+#TODO("2.C. Is it randomness? Use simple_boxplot and bootstrap_auc/bootstrap_acc to see if the differences are meaningful!")
+
+# let's see
+from shared import bootstrap_accuracy, simple_boxplot
+
+boxplot_datas = {}
+
+for name, m in models.items():
+    boxplot_datas[name] = bootstrap_accuracy(m, X_vali, y_vali)
+
+simple_boxplot(boxplot_datas,title="Validation Accuracy",xlabel="Model",ylabel="Accuracy",save="model-cmp.png",)
+
+# the linear model and the random forest classifier look pretty identical
+
 TODO("2.D. Is it randomness? Control for random_state parameters!")
