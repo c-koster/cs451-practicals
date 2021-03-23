@@ -12,13 +12,13 @@ from shared import (
 
 # stdlib:
 from dataclasses import dataclass, field
-import json, gzip
+import json, gzip, csv
 from typing import Dict, List
 
 
 #%% load up the data
-# Try 'POETRY'
-dataset = "WIKI"
+# Try 'POETRY', 'WIKI', or 'NOODLE'
+dataset = "NOODLE"
 examples: List[str] = []
 ys: List[bool] = []
 
@@ -32,7 +32,7 @@ if dataset == "WIKI":
             ys.append(info["truth_value"])
             # hold onto this single dictionary.
             examples.append(keep)
-else:
+elif dataset == "POETRY":
     # take only one per book!
     by_book = {}
     with open(dataset_local_path("poetry_id.jsonl")) as fp:
@@ -44,10 +44,22 @@ else:
     for info in by_book.values():
         # Note: the data contains a whole bunch of extra stuff; we just want numeric features for now.
         keep = info["words"]
+
         # whether or not it's poetry is our label.
         ys.append(info["poetry"])
         # hold onto this single dictionary.
         examples.append(keep)
+elif dataset == "NOODLE":
+    with open("data/campus_or_noodle.csv") as fp:
+        csv_reader = csv.DictReader(fp)
+        for row in csv_reader:
+
+            keep = row["text"] # put the text in
+            ys.append(row["label"]) # and also the label
+            examples.append(keep)
+
+else:
+    assert dataset in ["NOODLE","WIKI","POETRY"]
 
 #%% Split data:
 
@@ -72,16 +84,22 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 
 # Note we're doing "CountVectorizer" here and not TfidfVectorizer. Hmm...
+ng_bound = 3
 word_features = CountVectorizer(
     strip_accents="unicode",
     lowercase=True,
-    ngram_range=(1, 1),
+    ngram_range=(1, ng_bound),
 )
 
 # How does it take a whole paragraph and turn it into words?
 text_to_words = word_features.build_analyzer()
 # text_to_words is a function (str) -> List[str]
-assert text_to_words("Hello world!") == ["hello", "world"]
+print(text_to_words("Hello world!"))
+if ng_bound == 1:
+    assert(text_to_words("Hello world!") == ["hello", "world"])
+else:
+    assert(text_to_words("Hello world!") == ['hello', 'world', 'hello world'])
+
 
 # Learn columns from training data (again)
 word_features.fit(ex_train)
@@ -103,7 +121,7 @@ from sklearn.naive_bayes import MultinomialNB
 
 # Try a couple alpha values (what to do with zero-prob words!)
 # Alpha can really be anything positive!
-for alpha in [0.1, 1.0, 10.0]:
+for alpha in [0, 0.1, 0.2, 0.5, 1.0, 10.0]:
     m = MultinomialNB(alpha=alpha)
     m.fit(X_train, y_train)
     scores = m.predict_proba(X_vali)[:, 1]
@@ -147,13 +165,18 @@ is_random = CountLanguageModel()
 
 # Train these two model pieces:
 for y, ex in zip(y_train, ex_train):
+    # combine the list and iterate over it
     words = text_to_words(ex)
     # with linear smoothing, everything goes in random (positive OR negative)
     is_random.add_example(words)
     # but only positive go in positive:
-    if y:
+    if y: # python/c for "true"
         is_positive.add_example(words)
 
+
+
+# put all words into the random bag
+# but only some words into the positive bag
 print("positive-size: {}".format(is_positive.total))
 print("rand-size: {}".format(is_random.total))
 
@@ -215,15 +238,30 @@ simple_boxplot(results, ylabel="AUC", save="{}-text-AUC.png".format(dataset))
 
 from shared import TODO
 
-TODO(
-    "1. Explore alpha and linear parameters; make a decision about what a good choice for this dataset might be."
-)
+#TODO("1. Explore alpha and linear parameters; make a decision about what a good choice for this dataset might be.")
+# alpha is a smoothing parameter -- what you do with words that don't show up in the bag.
+# alpha = 0.5 seems alright
+# linear is a multiplication parameter -- to ensure nonzero probability
+# linear = 0.3 looks good too
+
+
 
 # 2 is once again a choose-your-own:
-TODO(
-    "2A. Explore ngrams, lowercase v. uppercase, etc. (how changing CountVectorizer changes performance, or not)"
-)
-TODO(
-    "2B. Explore the difference between today's approaches to the WIKI dataset and yesterday's."
-)
-TODO("2C. Explore the differences between the WIKI dataset and the POETRY dataset.")
+# TODO("2A. Explore ngrams, lowercase v. uppercase, etc. (how changing CountVectorizer changes performance, or not)")
+# so with ngram_range = 1 the best AUC I get is .832
+# but with ngram_range = 3 I get up to .847 -- difference in performance? yeah maybe
+
+# TODO("2B. Explore the difference between today's approaches to the WIKI dataset and yesterday's.")
+# TODO("2C. Explore the differences between the WIKI dataset and the POETRY dataset.")
+# poetry does WAY better ... 0.945 ?
+# although foley says these results are exaggerated.
+
+# TODO("2D. Import your own dataset for binary classification.")
+# IS_RANDOM = {campus} U {noodle}
+# is_NOODLE = {noodle}
+# when I try using a model on the noodle, I'd like to switch instead to the question IS_CAMPUS and IS_NOODLE
+# rather than IS_1 and IS_RANDOM. But this gives me a div0 error
+
+
+
+prob_positive = positive.prob(word)
