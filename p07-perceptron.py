@@ -240,10 +240,36 @@ print("skP. Vali-Accuracy: {:.3}".format(skP.score(X_vali, y_vali)))
 #
 ## TODO Exploration 1A: Try a MLP (Multi-Layer Perceptron).
 mlp = MLPClassifier(hidden_layer_sizes=(32,))
+
+print("Train sklearn-MLPClassifier (skP)")
+for iter in tqdm(range(1000)):
+    mlp.partial_fit(X_train, y_train, classes=(0, 1))
+    learning_curves["skMLPClassifier"].add_sample(mlp, X_train, y_train, X_vali, y_vali)
+
+print("skMLP. Train-Accuracy: {:.3}".format(mlp.score(X_train, y_train)))
+print("skMLP. Vali-Accuracy: {:.3}".format(mlp.score(X_vali, y_vali)))
+
+# neat
+
+
 ## TODO Exploration 1B: Try another Linear Model
 sgdc = SGDClassifier()
 
+for iter in tqdm(range(1000)):
+    sgdc.partial_fit(X_train, y_train, classes=(0, 1))
+    learning_curves["skSGDCassifier"].add_sample(sgdc, X_train, y_train, X_vali, y_vali)
+
+print("skSGDC. Train-Accuracy: {:.3}".format(sgdc.score(X_train, y_train)))
+print("skSGDC. Vali-Accuracy: {:.3}".format(sgdc.score(X_vali, y_vali)))
+
+
 ## TODO Think: Why can't we make a graph like this for DecisionTreeClassifier?
+# answer:
+# well what would that do? Pause and compute the cross-validation and training
+# accuracy every time we increase the depth of our classifier?  This would entail
+# pausing at each level of recursion to compute accuracy scores .. idk seems a
+# little messy
+
 
 #%% Plot!
 
