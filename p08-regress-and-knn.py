@@ -33,8 +33,13 @@ with open(dataset_local_path("AirQualityUCI.csv")) as fp:
             elif column_name == "Time":
                 time = column_value
             else:
-                datapoint[column_name] = float(column_value.replace(",", "."))
+                as_float = float(column_value.replace(",", "."))
+                if as_float == -200:
+                    continue
+                datapoint[column_name] = as_float
         if not datapoint:
+            continue
+        if "CO(GT)" not in datapoint:
             continue
         target = datapoint["CO(GT)"]
         del datapoint["CO(GT)"]
@@ -76,16 +81,55 @@ X_vali = scaling.transform(rX_vali)
 X_test = scaling.transform(rX_test)
 
 print(X_train.shape, X_vali.shape)
+
+
+# plot the data -- check dinosaur
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+
+plot_PCA = PCA(n_components=2)
+X_new = plot_PCA.fit_transform(X_train)
+x1_plot,x2_plot = X_new.T
+print("Running PCA on all these float values:")
+print(plot_PCA.explained_variance_ratio_)
+plt.scatter(x1_plot,x2_plot)
+plt.show()
+
+
+
+
 #%% train a model:
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.linear_model import SGDRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.neighbors import KNeighborsRegressor
 
+
+# foley does the KNN for us
 m = KNeighborsRegressor(n_neighbors=5, weights="distance")
 m.fit(X_train, y_train)
 
-print(m.score(X_vali, y_vali))
+print("KNN score: {}\n------------".format(m.score(X_vali, y_vali)))
+
+
+d = DecisionTreeRegressor(max_depth=None,random_state=RANDOM_SEED)
+d.fit(X_train, y_train)
+
+print("Decision Tree Regression score: {}\n------------".format(d.score(X_vali, y_vali)))
+# score of .5 ? niice
+
+lin = SGDRegressor(random_state=RANDOM_SEED)
+lin.fit(X_train, y_train)
+
+print("Linear Model score: {}\n------------".format(lin.score(X_vali, y_vali)))
+
+nn = MLPRegressor(random_state=RANDOM_SEED, max_iter=3000, learning_rate_init=0.01)
+nn.fit(X_train, y_train)
+print("Neural Network score: {}\n------------".format(nn.score(X_vali, y_vali)))
+
+
+plt.scatter(y_vali,nn.predict(X_vali))
+plt.show()
 
 ## Lab TODO:
 # Mandatory:
