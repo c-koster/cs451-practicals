@@ -126,7 +126,7 @@ print("Linear Model score: {}\n------------".format(lin.score(X_vali, y_vali)))
 nn = MLPRegressor(random_state=RANDOM_SEED, max_iter=3000, learning_rate_init=0.01)
 nn.fit(X_train, y_train)
 print("Neural Network score: {}\n------------".format(nn.score(X_vali, y_vali)))
-
+# wow ok  the neural network regressor does pretty well (0.9 score)
 
 plt.scatter(y_vali,nn.predict(X_vali))
 plt.show()
