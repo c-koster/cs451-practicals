@@ -206,6 +206,7 @@ plt.show()
 # - ok done. everything but page_rank, century_mentioned, and list_of are removed
 # ... could adding a random feature help you here?
 # - yes it does!! I added random1 back in and removed everything that was worse.
-
+# - also as we talked about, it's hard to do much better without switching to using
+# words as features.
 
 # (optional). Consider improving ``train_and_eval`` to use more powerful models
