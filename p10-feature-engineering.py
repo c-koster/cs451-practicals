@@ -41,21 +41,25 @@ def extract_features(row):
     new_features = {
         "disambig": "disambiguation" in title,
         "page_rank": row["page_rank"],
-        "length": len(words),
-        # "18xx": sum(1 for x in numbers if 1800 < x <= 1900),
-        "random1": random.random(),
-        "random2": random.random(),
-        "random3": random.random(),
-        "random4": random.random(),
+        #"length": len(words),
+        "18xx": sum(1 for x in numbers if 1800 < x <= 1900),
+        "19xx+": sum(1 for x in numbers if 1900 < x),
+        "listof": "list of" in title,
+        "genus": "genus" in body
+        #"random1": random.random(),
+        #"random2": random.random(),
+        #"random3": random.random(),
+        #"random4": random.random(),
     }
     if len(numbers) > 0:
-        new_features["mean_n"] = np.mean(numbers)
-        new_features["std_n"] = np.std(numbers)
+        pass
+        #new_features["mean_n"] = np.mean(numbers)
+        #new_features["std_n"] = np.std(numbers)
 
     return new_features
 
 
-# right now each entry of the dataframe is a dictionary; json_normalize flattenst hat for us.
+# right now each entry of the dataframe is a dictionary; json_normalize flattens that for us.
 designed_f = pd.json_normalize(df.apply(extract_features, axis="columns"))
 
 #%%
@@ -190,12 +194,18 @@ plt.savefig("graphs/p10-feature-removal.png")
 plt.show()
 
 # TODO: Try to engineer some features!
-#
 # 1. Remove __obviously__ evil features (random1,random2,random3,random4)
+# - I removed randoms 1-4
 # 2. Add some good features
 # 2.1. See commented-out 18xx feature for ideas on how to use 'numbers'
+# - ok I added it, and a 1900+ feature
 # 2.2. 'List_of_...' pages aren't considered literary
+# - this one wasn't very effective... only 37 title containned 'list of'
+
 # 3. Remove bad features (that weren't as obvious!)
+# - ok done. everything but page_rank, century_mentioned, and list_of are removed
 # ... could adding a random feature help you here?
+# - yes it does!! I added random1 back in and removed everything that was worse.
+
 
 # (optional). Consider improving ``train_and_eval`` to use more powerful models
