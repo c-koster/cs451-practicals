@@ -140,7 +140,7 @@ for i in range(1000):
 
 print(["{:1.3f}".format(x[0]) for x in best_model.weights.tolist()])
 
-graphs["Best-of-Random"] = bootstrap_r2(best_model, X_vali, y_vali)
+#graphs["Best-of-Random"] = bootstrap_r2(best_model, X_vali, y_vali)
 
 # SGD uses derivatives to 'aim' it's search... faster than CA which explores every direction!
 for i in range(20):
@@ -213,4 +213,6 @@ simple_boxplot(graphs, "{} R**2".format(PREDICT_COL), save="graphs/p11-r2-score.
 ##
 # TODO:
 # 1. remove the 'best-of-random' graph, so you can see the other ones!
+# I removed it!
 # 2. See if there's anything here that might help your project.
+#
