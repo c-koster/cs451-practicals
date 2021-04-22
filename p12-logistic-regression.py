@@ -25,7 +25,7 @@ X_vali = Xd_vali["numeric"]
 #%%
 from sklearn.linear_model import LogisticRegression
 
-m = LogisticRegression(random_state=RANDOM_SEED, penalty="none", max_iter=2000)
+m = LogisticRegression(random_state=RANDOM_SEED, penalty="none", max_iter=200)
 m.fit(X_train, y_train)
 
 print("skLearn-LR AUC: {:.3}".format(np.mean(bootstrap_auc(m, X_vali, y_vali))))
@@ -119,18 +119,17 @@ def train_logistic_regression_gd(name: str, num_iter=100):
     return m
 
 
-m = train_logistic_regression_gd("LR-GD", num_iter=2000)
-print("LR-GD AUC: {:.3}".format(np.mean(bootstrap_auc(m, X_vali, y_vali))))
-print("LR-GD Acc: {:.3}".format(m.score(X_vali, y_vali)))
+#m = train_logistic_regression_gd("LR-GD", num_iter=2000)
+#print("LR-GD AUC: {:.3}".format(np.mean(bootstrap_auc(m, X_vali, y_vali))))
+#print("LR-GD Acc: {:.3}".format(m.score(X_vali, y_vali)))
 
 
-def train_logistic_regression_sgd_opt(name: str, num_iter=100, minibatch_size=512):
+def train_logistic_regression_sgd_opt(name: str, num_iter=100, minibatch_size=512,alpha=.1):
     """ This is bootstrap-sampling minibatch SGD """
     plot = ModelTrainingCurve()
     learning_curves[name] = plot
 
     m = LogisticRegressionModel.random(D)
-    alpha = 0.1
     n_samples = max(1, N // minibatch_size)
 
     for _ in tqdm(range(num_iter), total=num_iter, desc=name):
@@ -142,9 +141,12 @@ def train_logistic_regression_sgd_opt(name: str, num_iter=100, minibatch_size=51
     return m
 
 
-m = train_logistic_regression_sgd_opt("LR-SGD", num_iter=2000)
-print("LR-SGD AUC: {:.3}".format(np.mean(bootstrap_auc(m, X_vali, y_vali))))
-print("LR-SGD Acc: {:.3}".format(m.score(X_vali, y_vali)))
+for learning_rate in [0.05, 0.1, 0.5, 1.0, 10]:
+    name = "LR-SGD ({})".format(learning_rate)
+    m = train_logistic_regression_sgd_opt(name, num_iter=200, alpha=learning_rate)
+
+    print("LR-SGD AUC: {:.3}".format(np.mean(bootstrap_auc(m, X_vali, y_vali))))
+    print("LR-SGD Acc: {:.3}".format(m.score(X_vali, y_vali)))
 
 
 ## Create training curve plots:
@@ -177,16 +179,21 @@ plt.show()
 # TODO:
 #
 # 1. pick SGD or GD (I recommend SGD)
+#  -- I choose SGD
 # 2. pick a smaller max_iter that gets good performance.
-
+#  -- 200 seems ok for SGD
 # Do either A or B:
 
 # (A) Explore Learning Rates:
 #
 # 3. make ``alpha``, the learning rate, a parameter of the train function.
+#  -- ok
 # 4. make a graph including some faster and slower alphas:
-# .... alpha = [0.05, 0.1, 0.5, 1.0]
+# .... alpha = [0.05, 0.1, 0.5, 1.0, 10]
 # .... what do you notice?
+
+#  -- I notice that 0.5 and 1.0 converge after like 20 iterations, and that
+#   an enormous alpha also converges ( at least with SGD )
 
 # (B) Explore 'Automatic/Early Stopping'
 #
