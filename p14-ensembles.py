@@ -9,6 +9,7 @@ from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.utils import resample
 import typing as T
 from shared import TODO
+from tqdm import tqdm
 
 # start off by seeding random number generators:
 RANDOM_SEED = 12345
@@ -56,18 +57,33 @@ class WeightedEnsemble(ClassifierMixin):
 
 #%%
 
+
+
+tree_params = {
+    "criterion": "gini",
+    "max_depth": 6,
+    "random_state": RANDOM_SEED,
+}
+
+import matplotlib.pyplot as plt
+
+
+
+forest = WeightedEnsemble()
+(N, D) = X_train.shape
+
 tree_num = []
 tree_vali = []
 forest_vali = []
 
-forest = WeightedEnsemble()
-(N, D) = X_train.shape
-for i in range(100):
+for i in tqdm(range(100)):
     # bootstrap sample the training data
     X_sample, y_sample = resample(X_train, y_train)  # type:ignore
 
-    # TODO create a tree model.
-    tree = TODO("train and fit a model to the sampled data")
+    # create a tree model --  ok done
+    tree = DecisionTreeClassifier(**tree_params)
+    tree.fit(X_sample, y_sample)
+
 
     # TODO Experiment:
     # What if instead of every tree having the same 1.0 weight, we considered some alternatives?
@@ -75,7 +91,11 @@ for i in range(100):
     #  - weight = the accuracy of that tree on the validation set.
     #  - weight = random.random()
     #  - weight = 0.1
-    weight = 1.0
+
+    # it really doesn't matter what weight you pick. it doesn't get better accuracy than with
+    #  constant weights or even randomm weights
+    # [1.0, tree.score(X_train, y_train), tree.score(X_vali, y_vali), random.random(), 0.1]
+    weight = 0.1
 
     # hold onto it for voting
     forest.insert(weight, tree)
@@ -83,13 +103,10 @@ for i in range(100):
     tree_num.append(i)
     tree_vali.append(tree.score(X_vali, y_vali))
     forest_vali.append(forest.score(X_vali, y_vali))
-    if i % 5 == 0:
-        print("Tree[{}] = {:.3}".format(i, tree_vali[-1]))
-        print("Forest[{}] = {:.3}".format(i, forest_vali[-1]))
 
-import matplotlib.pyplot as plt
+print("Forest after loop = {:.3}".format(forest_vali[-1]))
 
-plt.plot(tree_num, tree_vali, label="Individual Trees", alpha=0.5)
+plt.scatter(tree_num, tree_vali, label="Individual Trees", alpha=0.5)
 plt.plot(tree_num, forest_vali, label="Random Forest")
 plt.legend()
 plt.show()
