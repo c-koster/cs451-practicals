@@ -58,7 +58,7 @@ class ModelInfo:
 
 # TODO: C is the most important value for a SVM.
 #       1/C is how important the model stays small.
-# TODO: RBF Kernel is the best; explore it's 'gamma' parameter.
+# TODO: RBF Kernel is the best; explore its 'gamma' parameter.
 
 for cfg in configs:
     variants: T.List[ModelInfo] = []
