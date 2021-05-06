@@ -45,6 +45,16 @@ configs.append({"kernel": "linear"})
 configs.append({"kernel": "poly", "degree": 2})
 configs.append({"kernel": "poly", "degree": 3})
 configs.append({"kernel": "rbf"})
+
+
+# here, you define items in configs, which you iterate over later
+#   so I add some configs with different gamma parameters using RBF
+#   it seems like gamma: auto does just as well while setting gamma
+#   to a float value makes the model awful
+configs.append({"kernel": "rbf","gamma":"auto"})
+configs.append({"kernel": "rbf","gamma":.5})
+configs.append({"kernel": "rbf","gamma":1})
+
 # configs.append({"kernel": "sigmoid"}) # just awful.
 
 
@@ -61,17 +71,25 @@ class ModelInfo:
 # TODO: RBF Kernel is the best; explore its 'gamma' parameter.
 
 for cfg in configs:
+    # c is a regularization parameter ?
+    # "The strength of the regularization is inversely proportional to C"
+    # so higher C means lower regularization
     variants: T.List[ModelInfo] = []
     for class_weights in [None, "balanced"]:
-        for c_val in [1.0]:
+        for c_val in [0.5, 1.0, 2.0]:
             svm = SVMClassifier(C=c_val, class_weight=class_weights, **cfg)
             svm.fit(X_train, y_train)
             name = "k={}{} C={} {}".format(
                 cfg["kernel"], cfg.get("degree", ""), c_val, class_weights or ""
             )
+            # if I put gamma into the config list -- add it to the graph label
+            if "gamma" in cfg.keys():
+                name += " G={}".format(cfg['gamma'])
+
             accuracy = svm.score(X_vali, y_vali)
-            print("{}. score= {:.3}".format(name, accuracy))
+            #print("{}. score= {:.3}".format(name, accuracy))
             variants.append(ModelInfo(name, accuracy, svm))
+
     best = max(variants, key=lambda x: x.accuracy)
     graphs[best.name] = bootstrap_accuracy(best.model, X_vali, y_vali)
 
