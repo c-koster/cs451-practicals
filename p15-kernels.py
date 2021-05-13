@@ -53,7 +53,9 @@ configs.append({"kernel": "rbf"})
 #   to a float value makes the model awful
 configs.append({"kernel": "rbf","gamma":"auto"})
 configs.append({"kernel": "rbf","gamma":.5})
-configs.append({"kernel": "rbf","gamma":1})
+#configs.append({"kernel": "rbf","gamma":1})
+configs.append({"kernel": "rbf","gamma":.028})
+
 
 # configs.append({"kernel": "sigmoid"}) # just awful.
 
